@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/PuerkitoBio/goquery"
 	"io/ioutil"
 	"log"
 	"math/rand"
@@ -14,6 +13,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/PuerkitoBio/goquery"
 )
 
 var cookies []*http.Cookie
@@ -39,7 +40,7 @@ func init() {
 	info[9] = "http://libzwxt.ahnu.edu.cn/SeatWx/Room.aspx?rid=16&fid=10" // 四 公共区域 西
 }
 
-func login(stuId string) bool {
+func login(stuId, password string) bool {
 	form := url.Values{}
 	form.Set("__VIEWSTATE", "/wEPDwULLTE0MTcxNzMyMjZkZJoL/NVYL0T+r5y3cXpfEFEzXz+dxNVtb7TlDKf8jIxz")
 	form.Set("__VIEWSTATEGENERATOR", "F2D227C8")
@@ -99,9 +100,12 @@ func printInfo() {
 
 func main() {
 	var stuId string
+	var password string
 	fmt.Printf("请输入学号： ")
 	fmt.Scanln(&stuId)
-	logState := login(stuId)
+	fmt.Printf("请输入密码： ")
+	fmt.Scanln(&password)
+	logState := login(stuId, password)
 	if !logState {
 		fmt.Println("登陆失败，程序退出")
 		return
