@@ -42,11 +42,11 @@ func init() {
 
 func login(stuId, password string) bool {
 	form := url.Values{}
-	form.Set("__VIEWSTATE", "/wEPDwULLTE0MTcxNzMyMjZkZJoL/NVYL0T+r5y3cXpfEFEzXz+dxNVtb7TlDKf8jIxz")
+	form.Set("__VIEWSTATE", "/wEPDwULLTE0MTcxNzMyMjZkZAl5GTLNAO7jkaD1B+BbDzJTZe4WiME3RzNDU4obNxXE")
 	form.Set("__VIEWSTATEGENERATOR", "F2D227C8")
-	form.Set("__EVENTVALIDATION", "/wEWBQKV1czoDALyj/OQAgKXtYSMCgKM54rGBgKj48j5D1AZa5C6Zak6btNjhoHWy1AzD9qoyayyu5qGeLnFyXKG")
+	form.Set("__EVENTVALIDATION", "/wEWBQK1odvtBQLyj/OQAgKXtYSMCgKM54rGBgKj48j5D4sJr7QMZnQ4zS9tzQuQ1arifvSWo1qu0EsBRnWwz6pw")
 	form.Set("tbUserName", stuId)
-	form.Set("tbPassWord", stuId)
+	form.Set("tbPassWord", password)
 	form.Set("Button1", "登 录")
 	form.Set("hfurl", "")
 	b := bytes.NewBufferString(form.Encode())
@@ -82,6 +82,7 @@ func login(stuId, password string) bool {
 	}
 
 	cookies = resp.Cookies()
+	fmt.Printf("cookies: %#v\n", cookies)
 	return true
 }
 
