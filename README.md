@@ -1,5 +1,5 @@
 ﻿# AHNU-Retrieval
-
+> 检索AHNU图书馆空闲座位脚本
 #### 1 clone该项目
 ``` bash
 git clone https://github.com/lthyxsl/AHNU-Retrieval.git
@@ -10,5 +10,5 @@ go mod download
 ```
 #### 3. 运行程序
 ``` bash
-go run app.go
+go run main.go
 ```
