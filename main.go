@@ -29,15 +29,16 @@ type Seat struct {
 
 func init() {
 	info = make(map[int]string, 10)
-	info[1] = "http://libzwxt.ahnu.edu.cn/SeatWx/Room.aspx?rid=1&fid=1"   // 二 南
-	info[2] = "http://libzwxt.ahnu.edu.cn/SeatWx/Room.aspx?rid=6&fid=3"   // 三 南 自然科学
-	info[3] = "http://libzwxt.ahnu.edu.cn/SeatWx/Room.aspx?rid=5&fid=4"   // 三 北 社科 一
-	info[4] = "http://libzwxt.ahnu.edu.cn/SeatWx/Room.aspx?rid=3&fid=5"   // 四 南 社科三
-	info[5] = "http://libzwxt.ahnu.edu.cn/SeatWx/Room.aspx?rid=4&fid=6"   // 四 北 社科二
-	info[6] = "http://libzwxt.ahnu.edu.cn/SeatWx/Room.aspx?rid=13&fid=9"  // 三 公共区域 东
-	info[7] = "http://libzwxt.ahnu.edu.cn/SeatWx/Room.aspx?rid=14&fid=9"  // 三 公共区域 西
-	info[8] = "http://libzwxt.ahnu.edu.cn/SeatWx/Room.aspx?rid=15&fid=10" // 四 公共区域 东
-	info[9] = "http://libzwxt.ahnu.edu.cn/SeatWx/Room.aspx?rid=16&fid=10" // 四 公共区域 西
+	info[0] = "https://libzwxt.ahnu.edu.cn/seatwx/Room.aspx?rid=18&fid=1"  // 二楼电子阅览室
+	info[1] = "https://libzwxt.ahnu.edu.cn/SeatWx/Room.aspx?rid=1&fid=1"   // 二 南
+	info[2] = "https://libzwxt.ahnu.edu.cn/SeatWx/Room.aspx?rid=6&fid=3"   // 三 南 自然科学
+	info[3] = "https://libzwxt.ahnu.edu.cn/SeatWx/Room.aspx?rid=5&fid=4"   // 三 北 社科 一
+	info[4] = "https://libzwxt.ahnu.edu.cn/SeatWx/Room.aspx?rid=3&fid=5"   // 四 南 社科三
+	info[5] = "https://libzwxt.ahnu.edu.cn/SeatWx/Room.aspx?rid=4&fid=6"   // 四 北 社科二
+	info[6] = "https://libzwxt.ahnu.edu.cn/SeatWx/Room.aspx?rid=13&fid=9"  // 三 公共区域 东
+	info[7] = "https://libzwxt.ahnu.edu.cn/SeatWx/Room.aspx?rid=14&fid=9"  // 三 公共区域 西
+	info[8] = "https://libzwxt.ahnu.edu.cn/SeatWx/Room.aspx?rid=15&fid=10" // 四 公共区域 东
+	info[9] = "https://libzwxt.ahnu.edu.cn/SeatWx/Room.aspx?rid=16&fid=10" // 四 公共区域 西
 }
 
 func login(stuId, password string) bool {
@@ -87,6 +88,7 @@ func login(stuId, password string) bool {
 }
 
 func printInfo() {
+	fmt.Println("花津校区图书馆2楼电子阅览室 			请输入 0")
 	fmt.Println("花津校区图书馆2楼南 			请输入 1")
 	fmt.Println("花津校区图书馆3楼南自然科学		请输入 2")
 	fmt.Println("花津校区图书馆3楼北社科一	 	请输入 3")
@@ -158,7 +160,6 @@ func main() {
 			wg.Add(1)
 			go check(s, date)
 		}
-
 		wg.Wait()
 	} else {
 		fmt.Println("输入选项不正确，程序退出")
@@ -175,24 +176,24 @@ func check(s Seat, date string) {
 	b, _ := json.Marshal(data)
 	buff := bytes.NewBuffer(b)
 	req, _ := http.NewRequest("POST", "http://libzwxt.ahnu.edu.cn/SeatWx/ajaxpro/SeatManage.Seat,SeatManage.ashx", buff)
-	//req.Header.Add("X-Powered-By", "ASP.NET")
+	req.Header.Add("X-Powered-By", "ASP.NET")
 	//req.Header.Add("Proxy-Connection", "keep-alive")
 	//req.Header.Add("Accept", "*/*")
-	//req.Header.Add("Host", "libzwxt.ahnu.edu.cn")
-	//req.Header.Add("Origin", "http://libzwxt.ahnu.edu.cn")
+	req.Header.Add("Host", "libzwxt.ahnu.edu.cn")
+	req.Header.Add("Origin", "http://libzwxt.ahnu.edu.cn")
 	//req.Header.Add("Referer", s.Href)
 	req.Header.Set("Content-Type", "application/json")
 	//req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-	//req.Header.Add("User-Agent", "Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.90 Mobile Safari/537.36")
+	req.Header.Add("User-Agent", "Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.90 Mobile Safari/537.36")
 	req.Header.Add("X-AjaxPro-Method", "GetSetInfo")
 	res, err := client.Do(req)
 	if err != nil {
 		panic(err)
 	}
 	all, _ := ioutil.ReadAll(res.Body)
-	fmt.Printf("正在查找: %s 座位情况\n", s.Name)
+	fmt.Printf("-------------正在查找: %s 座位情况\n", s.Name)
 	if !strings.Contains(string(all), `<i class='on'></i>`) {
-		fmt.Printf("----------------------检索全天空闲座位成功 %s \n", s.Name)
+		fmt.Printf(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> 检索全天空闲座位成功 %s \n", s.Name)
 	}
 	wg.Done()
 
