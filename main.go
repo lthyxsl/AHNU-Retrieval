@@ -10,6 +10,8 @@ import (
 	"net/http"
 	"net/http/cookiejar"
 	"net/url"
+	"os"
+	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -17,37 +19,59 @@ import (
 	"github.com/PuerkitoBio/goquery"
 )
 
-var cookies []*http.Cookie
+// var cookies []*http.Cookie
 var client = &http.Client{}
 var wg sync.WaitGroup
-var info map[int]string
+var config = Config{}
+
+type StringSlice []string
+
+func (p StringSlice) Len() int           { return len(p) }
+func (p StringSlice) Less(i, j int) bool { return p[i] < p[j] }
+func (p StringSlice) Swap(i, j int)      { p[i], p[j] = p[j], p[i] }
+
+var finalSeats = StringSlice{}
 
 type Seat struct {
 	Name string
 	Href string
 }
 
-func init() {
-	info = make(map[int]string, 10)
-	info[0] = "https://libzwxt.ahnu.edu.cn/seatwx/Room.aspx?rid=18&fid=1"  // 二楼电子阅览室
-	info[1] = "https://libzwxt.ahnu.edu.cn/SeatWx/Room.aspx?rid=1&fid=1"   // 二 南
-	info[2] = "https://libzwxt.ahnu.edu.cn/SeatWx/Room.aspx?rid=6&fid=3"   // 三 南 自然科学
-	info[3] = "https://libzwxt.ahnu.edu.cn/SeatWx/Room.aspx?rid=5&fid=4"   // 三 北 社科 一
-	info[4] = "https://libzwxt.ahnu.edu.cn/SeatWx/Room.aspx?rid=3&fid=5"   // 四 南 社科三
-	info[5] = "https://libzwxt.ahnu.edu.cn/SeatWx/Room.aspx?rid=4&fid=6"   // 四 北 社科二
-	info[6] = "https://libzwxt.ahnu.edu.cn/SeatWx/Room.aspx?rid=13&fid=9"  // 三 公共区域 东
-	info[7] = "https://libzwxt.ahnu.edu.cn/SeatWx/Room.aspx?rid=14&fid=9"  // 三 公共区域 西
-	info[8] = "https://libzwxt.ahnu.edu.cn/SeatWx/Room.aspx?rid=15&fid=10" // 四 公共区域 东
-	info[9] = "https://libzwxt.ahnu.edu.cn/SeatWx/Room.aspx?rid=16&fid=10" // 四 公共区域 西
+type UrlsItem struct {
+	Index int    `json:"index"`
+	Title string `json:"title"`
+	Url   string `json:"url"`
 }
 
-func login(stuId, password string) bool {
+type Config struct {
+	TbUserName string     `json:"tbUserName"`
+	TbPassWord string     `json:"tbPassWord"`
+	Date       string     `json:"date"`
+	Option     int        `json:"option"`
+	Urls       []UrlsItem `json:"urls"`
+}
+
+func init() {
+	bytes, err := os.ReadFile("./conf/config.json")
+	if err != nil {
+		fmt.Println("加载配置文件失败")
+		os.Exit(-1)
+	}
+	config = Config{}
+	json.Unmarshal(bytes, &config)
+	if config.Date == "" {
+		config.Date = time.Now().Format("2006-01-02")
+		fmt.Println("使用当天默认时间查询", config.Date)
+	}
+}
+
+func login() bool {
 	form := url.Values{}
 	form.Set("__VIEWSTATE", "/wEPDwULLTE0MTcxNzMyMjZkZAl5GTLNAO7jkaD1B+BbDzJTZe4WiME3RzNDU4obNxXE")
 	form.Set("__VIEWSTATEGENERATOR", "F2D227C8")
 	form.Set("__EVENTVALIDATION", "/wEWBQK1odvtBQLyj/OQAgKXtYSMCgKM54rGBgKj48j5D4sJr7QMZnQ4zS9tzQuQ1arifvSWo1qu0EsBRnWwz6pw")
-	form.Set("tbUserName", stuId)
-	form.Set("tbPassWord", password)
+	form.Set("tbUserName", config.TbUserName)
+	form.Set("tbPassWord", config.TbPassWord)
 	form.Set("Button1", "登 录")
 	form.Set("hfurl", "")
 	b := bytes.NewBufferString(form.Encode())
@@ -82,91 +106,67 @@ func login(stuId, password string) bool {
 		return false
 	}
 
-	cookies = resp.Cookies()
-	fmt.Printf("cookies: %#v\n", cookies)
+	// cookies = resp.Cookies()
+	// fmt.Printf("cookies: %#v\n", cookies)
 	return true
 }
 
-func printInfo() {
-	fmt.Println("花津校区图书馆2楼电子阅览室 			请输入 0")
-	fmt.Println("花津校区图书馆2楼南 			请输入 1")
-	fmt.Println("花津校区图书馆3楼南自然科学		请输入 2")
-	fmt.Println("花津校区图书馆3楼北社科一	 	请输入 3")
-	fmt.Println("花津校区图书馆4楼北社科三		请输入 4")
-	fmt.Println("花津校区图书馆4楼南社科二		请输入 5")
-	fmt.Println("花津校区图书馆3楼公共区域东		请输入 6")
-	fmt.Println("花津校区图书馆3楼公共区域西		请输入 7")
-	fmt.Println("花津校区图书馆4楼公共区域东		请输入 8")
-	fmt.Println("花津校区图书馆4楼公共区域西		请输入 9")
-
-}
-
 func main() {
-	var stuId string
-	var password string
-	fmt.Printf("请输入学号： ")
-	fmt.Scanln(&stuId)
-	fmt.Printf("请输入密码： ")
-	fmt.Scanln(&password)
-	logState := login(stuId, password)
-	if !logState {
+
+	if !login() {
 		fmt.Println("登陆失败，程序退出")
 		return
 	}
-	fmt.Println("恭喜你，登陆成功， 欢迎进入此系统")
-	fmt.Println()
-	printInfo()
-	var input int
-	fmt.Printf("请输入预约楼层选项: ")
-	fmt.Scanln(&input)
-	var date string
-	fmt.Printf("请输入预约时间:（如格式 2021-03-08）")
-	fmt.Scanln(&date)
-	if date == "" {
-		date = time.Now().Format("2006-01-02")
-		fmt.Println("使用当天默认时间查询", date)
-	}
-	link, exists := info[input]
-	if exists {
-		res, err := client.Get(link)
-		if err != nil {
-			panic(err)
-		}
-		defer res.Body.Close()
-		// Load the HTML document
-		doc, err := goquery.NewDocumentFromReader(res.Body)
-		if err != nil {
-			log.Fatal(err)
-		}
+	request()
+}
 
-		children := doc.Find("#ulSeat li").Children()
-		seats := make([]Seat, 0, children.Length())
-		// Find the review items
-		doc.Find("#ulSeat li").Each(func(i int, s *goquery.Selection) {
-			// For each item found, get the band and title
-			name := s.Find("a").Text()
-			href, _ := s.Find("a").Attr("href")
-			//fmt.Printf("Review %d: %s-%s \n", i, name, href)
-			seat := Seat{
-				Name: name,
-				Href: "http://libzwxt.ahnu.edu.cn/SeatWx/" + href,
-			}
-			seats = append(seats, seat)
-		})
-
-		for _, s := range seats {
-			rand.Seed(time.Now().UnixNano())
-			time.Sleep(time.Duration(rand.Intn(2000)))
-			wg.Add(1)
-			go check(s, date)
-		}
-		wg.Wait()
-	} else {
-		fmt.Println("输入选项不正确，程序退出")
-		return
+// 开始请求
+func request() {
+	urlItem := config.Urls[config.Option]
+	res, err := client.Get(urlItem.Url)
+	if err != nil {
+		panic(err)
 	}
+	defer res.Body.Close()
+
+	// Load the HTML document
+	doc, err := goquery.NewDocumentFromReader(res.Body)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	children := doc.Find("#ulSeat li").Children()
+	seats := make([]Seat, 0, children.Length())
+	// Find the review items
+	doc.Find("#ulSeat li").Each(func(i int, s *goquery.Selection) {
+		// For each item found, get the band and title
+		name := s.Find("a").Text()
+		href, _ := s.Find("a").Attr("href")
+		//fmt.Printf("Review %d: %s-%s \n", i, name, href)
+		seat := Seat{
+			Name: name,
+			Href: "http://libzwxt.ahnu.edu.cn/SeatWx/" + href,
+		}
+		seats = append(seats, seat)
+	})
+
+	for _, s := range seats {
+		rand.Seed(time.Now().UnixNano())
+		time.Sleep(time.Duration(rand.Intn(2000)))
+		wg.Add(1)
+		go check(s, config.Date)
+	}
+	wg.Wait()
 
 	fmt.Println("********************")
+	if len(finalSeats) > 0 {
+		fmt.Println("********************完整座位列表")
+		sort.Sort(finalSeats)
+		for _, seat := range finalSeats {
+			fmt.Printf("%v ", seat)
+		}
+		fmt.Println()
+	}
 }
 
 func check(s Seat, date string) {
@@ -191,9 +191,10 @@ func check(s Seat, date string) {
 		panic(err)
 	}
 	all, _ := ioutil.ReadAll(res.Body)
-	fmt.Printf("-------------正在查找: %s 座位情况\n", s.Name)
+	// fmt.Printf("-------------正在查找: %s 座位情况\n", s.Name)
 	if !strings.Contains(string(all), `<i class='on'></i>`) {
-		fmt.Printf(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> 检索全天空闲座位成功 %s \n", s.Name)
+		fmt.Printf(">>>>>>>>>>>>>>>> 座位号 %s 全天空闲 \n", s.Name)
+		finalSeats = append(finalSeats, s.Name)
 	}
 	wg.Done()
 
