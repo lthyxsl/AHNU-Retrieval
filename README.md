@@ -12,6 +12,7 @@ go mod download
 
 #### 3. 修改配置
 > 3.1 复制 conf/config.json.template 为conf/config.json
+
 > 3.2 修改 conf/config.json 文件中的 *tbUserName* 、*tbPassWord*、 *date* 和 *option*等字段值
 #### 4. 运行程序
 ``` bash
